@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log
+work_dir/
+config.json
+.idea/
+*.dump
+*.info.json
+raw/
