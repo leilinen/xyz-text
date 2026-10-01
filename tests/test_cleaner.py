@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.media_tool.cleaner import clean_transcript_text, split_segments
+from src.media_tool.text.cleaner import clean_transcript_text, split_segments
 
 
 RAW_TEXT = """WEBVTT

@@ -5,15 +5,21 @@ import requests
 import sys
 from pathlib import Path
 
+import pytest
+
 PROJECT_ROOT = Path(__file__).resolve().parent
 SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from media_tool.config import get_settings
-from media_tool.feishu import get_tenant_access_token, create_document
+from media_tool.core.config import get_settings
+from media_tool.integrations.feishu import get_tenant_access_token, create_document
 
-def test_block(name: str, block: dict) -> bool:
+settings = get_settings()
+if not settings.feishu_app_id or not settings.feishu_app_secret:
+    pytest.skip("Feishu credentials are required for live API checks", allow_module_level=True)
+
+def check_block(name: str, block: dict) -> bool:
     """测试单个 block"""
     token = get_tenant_access_token()
     doc_token = create_document(f"测试:{name}", token)
@@ -34,7 +40,7 @@ def test_block(name: str, block: dict) -> bool:
 print("测试 Markdown 风格的标题:\n")
 
 # 使用 Markdown 风格的 # 前缀
-test_block("一级标题 (# )", {
+check_block("一级标题 (# )", {
     "block_type": 2,
     "text": {
         "elements": [{
@@ -45,7 +51,7 @@ test_block("一级标题 (# )", {
     }
 })
 
-test_block("二级标题 (## )", {
+check_block("二级标题 (## )", {
     "block_type": 2,
     "text": {
         "elements": [{
@@ -56,7 +62,7 @@ test_block("二级标题 (## )", {
     }
 })
 
-test_block("粗体一级标题", {
+check_block("粗体一级标题", {
     "block_type": 2,
     "text": {
         "elements": [{
@@ -68,7 +74,7 @@ test_block("粗体一级标题", {
     }
 })
 
-test_block("完整的文档结构", {
+check_block("完整的文档结构", {
     "block_type": 2,
     "text": {
         "elements": [{

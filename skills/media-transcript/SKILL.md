@@ -1,6 +1,6 @@
 ---
 name: media_transcript
-description: Transcribe and summarize media links (Bilibili, YouTube, Xiaoyuzhou podcasts) with auto Feishu sync.
+description: Transcribe, summarize, or download media links (Bilibili, YouTube, Xiaoyuzhou podcasts) with auto Feishu sync.
 metadata:
   {
     "openclaw":
@@ -18,7 +18,7 @@ metadata:
 
 # Media Transcript
 
-Transcribe media links, generate structured summaries (with entity extraction), and publish to Feishu documents.
+Transcribe media links, generate structured summaries (with entity extraction), and publish to Feishu documents. Also supports downloading videos from Bilibili and YouTube (including playlists/collections).
 
 ## Constraints
 
@@ -32,6 +32,8 @@ Use this skill immediately when the user asks any of:
 - "Transcribe this video/podcast"
 - "Summarize this link"
 - "What's this video about?"
+- "Download this video"
+- "Download this playlist"
 - Any message containing a URL from: `bilibili.com`, `b23.tv`, `youtube.com`, `youtu.be`, `xiaoyuzhoufm.com`
 
 ## Quick start
@@ -48,13 +50,22 @@ ssh "$MEDIA_TRANSCRIPT_HOST" "cd $MEDIA_TRANSCRIPT_PATH && python3 media_process
 
 The command outputs JSON to stdout with the transcript, summary, entities, and Feishu link.
 
+## Modes
+
+| Mode | Flag | Description |
+|------|------|-------------|
+| Transcript | `--mode transcript` (default) | Full pipeline: subtitle/ASR → clean → summarize → Feishu |
+| Download | `--mode download` | Download video file(s) only, no transcription or summary |
+
+In download mode, playlists and multi-part collections are automatically detected and all videos are downloaded.
+
 ## Supported platforms
 
-| Platform | URL patterns | Subtitles | ASR fallback |
-|----------|-------------|-----------|-------------|
-| YouTube | `youtube.com/watch?v=`, `youtu.be/` | Auto captions | SenseVoice |
-| Bilibili | `bilibili.com/video/BV`, `b23.tv/` | - | SenseVoice |
-| Xiaoyuzhou | `xiaoyuzhoufm.com/episode/` | - | SenseVoice |
+| Platform | URL patterns | Subtitles | ASR fallback | Video download | Playlists |
+|----------|-------------|-----------|-------------|---------------|-----------|
+| YouTube | `youtube.com/watch?v=`, `youtu.be/`, `youtube.com/playlist?list=` | Auto captions | SenseVoice | Yes | Yes |
+| Bilibili | `bilibili.com/video/BV`, `b23.tv/` | - | SenseVoice | Yes | Yes (multi-part) |
+| Xiaoyuzhou | `xiaoyuzhoufm.com/episode/` | - | SenseVoice | - | - |
 
 ## Processing pipeline
 
@@ -72,10 +83,11 @@ The command outputs JSON to stdout with the transcript, summary, entities, and F
 
 | Flag | Description |
 |------|-------------|
+| `--mode transcript\|download` | Processing mode (default: `transcript`) |
 | `--no-feishu` | Skip Feishu document publishing |
 | `--no-cleanup` | Keep temporary files for debugging |
 | `--no-summary` | Skip AI summarization |
-| `--output PATH` | Save raw transcript to file |
+| `--output PATH` | Transcript mode: save transcript to file. Download mode: output directory for videos |
 | `--retry FILE` | Retry Feishu upload from a saved JSON result |
 
 ### Examples
@@ -89,6 +101,15 @@ ssh "$MEDIA_TRANSCRIPT_HOST" "cd $MEDIA_TRANSCRIPT_PATH && python3 media_process
 
 # Skip summary (no API key needed)
 ssh "$MEDIA_TRANSCRIPT_HOST" "cd $MEDIA_TRANSCRIPT_PATH && python3 media_processor.py 'https://www.xiaoyuzhoufm.com/episode/abc123' --no-summary"
+
+# Download a single video
+ssh "$MEDIA_TRANSCRIPT_HOST" "cd $MEDIA_TRANSCRIPT_PATH && python3 media_processor.py 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' --mode download -o ~/Downloads"
+
+# Download a YouTube playlist
+ssh "$MEDIA_TRANSCRIPT_HOST" "cd $MEDIA_TRANSCRIPT_PATH && python3 media_processor.py 'https://www.youtube.com/playlist?list=PLxxx' --mode download -o ~/Downloads/playlist"
+
+# Download a Bilibili multi-part video
+ssh "$MEDIA_TRANSCRIPT_HOST" "cd $MEDIA_TRANSCRIPT_PATH && python3 media_processor.py 'https://www.bilibili.com/video/BV1GJ411x7h7' --mode download -o ~/Downloads"
 ```
 
 ## Output format
@@ -130,6 +151,22 @@ Error response:
   "ok": false,
   "error": "Error message",
   "error_type": "ConfigError"
+}
+```
+
+Download mode response:
+
+```json
+{
+  "ok": true,
+  "result": {
+    "platform": "youtube",
+    "title": "Video Title",
+    "output_dir": "/home/user/Downloads",
+    "files": ["/home/user/Downloads/Video Title.mp4"],
+    "is_playlist": false,
+    "video_count": 1
+  }
 }
 ```
 

@@ -11,9 +11,9 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from media_tool.pipeline import process_media
-from media_tool.storage import load_result, retry_feishu_upload
-from media_tool.utils import MediaToolError
+from media_tool.orchestration.pipeline import download_video, process_media
+from media_tool.outputs.storage import load_result, retry_feishu_upload
+from media_tool.core.utils import MediaToolError
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,7 +23,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-feishu", action="store_true", help="Skip Feishu document publishing")
     parser.add_argument("--no-cleanup", action="store_true", help="Keep temporary files")
     parser.add_argument("--no-summary", action="store_true", help="Skip AI summarization (requires no API key)")
-    parser.add_argument("--output", "-o", type=Path, help="Save transcript to file")
+    parser.add_argument("--no-comments", action="store_true", help="Skip hot comment extraction")
+    parser.add_argument("--mode", choices=["transcript", "download"], default="transcript",
+                        help="Processing mode: 'transcript' (default) for full pipeline, 'download' for video-only")
+    parser.add_argument("--output", "-o", type=Path,
+                        help="In transcript mode: save transcript to file. In download mode: output directory for video files.")
     return parser.parse_args()
 
 
@@ -85,6 +89,30 @@ def main() -> int:
         print(json.dumps({"ok": False, "error": "请提供 URL 或使用 --retry 参数"}, ensure_ascii=False))
         return 1
 
+    # 下载模式
+    if args.mode == "download":
+        try:
+            result = download_video(args.url, output_dir=args.output)
+        except Exception as exc:
+            print(json.dumps(_build_error_payload(exc), ensure_ascii=False))
+            return 1
+
+        output = {
+            "ok": True,
+            "result": {
+                "platform": result.source.platform,
+                "title": result.source.title,
+                "output_dir": str(result.output_dir),
+                "files": [str(f) for f in result.files],
+                "is_playlist": result.is_playlist,
+                "video_count": result.video_count,
+            },
+        }
+        print(json.dumps(output, ensure_ascii=False, indent=2))
+        print(f"\nDownloaded {result.video_count} video(s) to: {result.output_dir}", file=sys.stderr)
+        return 0
+
+    # 转录模式（默认）
     try:
         result = process_media(
             args.url,

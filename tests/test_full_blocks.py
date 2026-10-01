@@ -5,16 +5,22 @@ import requests
 import sys
 from pathlib import Path
 
+import pytest
+
 PROJECT_ROOT = Path(__file__).resolve().parent
 SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from media_tool.config import get_settings, require_feishu_credentials
-from media_tool.feishu import get_tenant_access_token, create_document
+from media_tool.core.config import get_settings, require_feishu_credentials
+from media_tool.integrations.feishu import get_tenant_access_token, create_document
+
+settings = get_settings()
+if not settings.feishu_app_id or not settings.feishu_app_secret:
+    pytest.skip("Feishu credentials are required for live API checks", allow_module_level=True)
 
 # 测试不同类型的 block
-def test_block_structure(name: str, blocks: list) -> bool:
+def check_block_structure(name: str, blocks: list) -> bool:
     """测试给定的 block 结构是否能成功写入"""
     settings = get_settings()
 
@@ -45,34 +51,34 @@ def test_block_structure(name: str, blocks: list) -> bool:
         return False
 
 # 测试 1: 只有文本
-test_block_structure("只有文本", [
+check_block_structure("只有文本", [
     {"block_type": 2, "text": {"elements": [{"text_run": {"content": "这是普通文本"}}]}},
 ])
 
 # 测试 2: Heading 1
-test_block_structure("Heading 1", [
+check_block_structure("Heading 1", [
     {"block_type": 2, "heading1": {"elements": [{"text_run": {"content": "这是一级标题"}}]}},
 ])
 
 # 测试 3: Heading 2
-test_block_structure("Heading 2", [
+check_block_structure("Heading 2", [
     {"block_type": 3, "heading2": {"elements": [{"text_run": {"content": "这是二级标题"}}]}},
 ])
 
 # 测试 4: 混合内容
-test_block_structure("混合内容", [
+check_block_structure("混合内容", [
     {"block_type": 2, "heading1": {"elements": [{"text_run": {"content": "标题"}}]}},
     {"block_type": 2, "text": {"elements": [{"text_run": {"content": "普通文本"}}]}},
 ])
 
 # 测试 5: 原代码的 bullet 格式 (使用文本块加 "•")
-test_block_structure("Bullet 列表", [
+check_block_structure("Bullet 列表", [
     {"block_type": 2, "text": {"elements": [{"text_run": {"content": "• 第一点"}}]}},
     {"block_type": 2, "text": {"elements": [{"text_run": {"content": "• 第二点"}}]}},
 ])
 
 # 测试 6: 真正的 bullet list block
-test_block_structure("真正的 Bullet Block", [
+check_block_structure("真正的 Bullet Block", [
     {"block_type": 2, "bullet": {"elements": [{"text_run": {"content": "第一点"}}]}},
 ])
 

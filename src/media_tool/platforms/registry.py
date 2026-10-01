@@ -6,7 +6,7 @@ from .base import PlatformAdapter
 from .bilibili import BilibiliPlatformAdapter
 from .xiaoyuzhou import XiaoyuzhouPlatformAdapter
 from .youtube import YouTubePlatformAdapter
-from ..utils import UnsupportedPlatformError
+from ..core.utils import UnsupportedPlatformError
 
 
 class PlatformRegistry:

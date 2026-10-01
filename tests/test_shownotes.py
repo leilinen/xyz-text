@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-from src.media_tool.shownotes import fetch_xiaoyuzhou_shownote, parse_xiaoyuzhou_shownote, strip_timeline
+from src.media_tool.enrichment.shownotes import fetch_xiaoyuzhou_shownote, parse_xiaoyuzhou_shownote, strip_timeline
 
 
 def _page_html(episode: dict) -> str:
@@ -74,7 +74,7 @@ def test_parse_xiaoyuzhou_shownote_falls_back_to_description() -> None:
     assert result.images == []
 
 
-@patch("src.media_tool.shownotes.requests.get")
+@patch("src.media_tool.enrichment.shownotes.requests.get")
 def test_fetch_xiaoyuzhou_shownote_returns_none_without_blocking(mock_get: MagicMock) -> None:
     mock_get.side_effect = RuntimeError("network down")
 

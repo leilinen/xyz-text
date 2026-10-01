@@ -1,8 +1,19 @@
 # Media Transcript Skill
 
-自动转录与总结媒体链接的工具。支持 Bilibili、YouTube、小宇宙播客，优先提取字幕后回退到 SenseVoice ASR，生成结构化总结并发布到飞书文档。
+自动转录与总结媒体链接的工具，支持视频下载。支持 Bilibili、YouTube、小宇宙播客，优先提取字幕后回退到 SenseVoice ASR，生成结构化总结并发布到飞书文档。也支持直接下载 Bilibili / YouTube 视频（含播放列表/合集）。
+
+## 两种模式
+
+| 模式 | 说明 | 默认 |
+|------|------|------|
+| `transcript` | 完整流水线：字幕提取/ASR → 清洗 → LLM 总结 → 飞书发布 | 是 |
+| `download` | 仅下载视频文件，不进行转录或总结 | 否 |
+
+通过 `--mode` 参数选择模式。
 
 ## 功能流程
+
+### 转录模式（默认）
 
 1. 识别 URL 对应的平台（Bilibili / YouTube / 小宇宙）
 2. 优先使用 `yt-dlp` 提取字幕
@@ -14,6 +25,13 @@
 8. 保存 Markdown 文件（YAML frontmatter + 结构化内容）
 9. 发布到飞书文档（含实体、热门评论区段）
 10. 输出统一 JSON 结果
+
+### 下载模式
+
+1. 识别 URL 对应的平台
+2. 自动检测是否为播放列表/合集
+3. 使用 yt-dlp 下载最佳画质视频（合并为 MP4）
+4. 输出下载结果 JSON
 
 ## 快速开始
 
@@ -100,10 +118,19 @@ brew install ffmpeg  # macOS
 ### 运行
 
 ```bash
-# 基本用法
+# 转录模式（默认）
 python3 media_processor.py "https://www.youtube.com/watch?v=abc123"
 
-# 跳过飞书发布
+# 下载单个视频
+python3 media_processor.py "https://www.youtube.com/watch?v=abc123" --mode download
+
+# 下载视频到指定目录
+python3 media_processor.py "https://www.bilibili.com/video/BV1xx..." --mode download -o ~/Downloads
+
+# 下载播放列表/合集（自动检测）
+python3 media_processor.py "https://www.youtube.com/playlist?list=PL..." --mode download -o ~/Downloads/playlist
+
+# 跳过飞书发布（转录模式）
 python3 media_processor.py "URL" --no-feishu
 
 # 保留临时文件（调试用）
@@ -112,7 +139,7 @@ python3 media_processor.py "URL" --no-cleanup
 # 跳过 AI 总结
 python3 media_processor.py "URL" --no-summary
 
-# 保存转录文本到文件
+# 保存转录文本到文件（转录模式）
 python3 media_processor.py "URL" -o transcript.txt
 
 # 从已保存的 JSON 重试飞书上传
@@ -123,30 +150,25 @@ python3 media_processor.py --retry result.json
 
 ## 支持平台
 
-| 平台 | URL 示例 | 字幕 | ASR | 热门评论 |
-|------|----------|------|-----|----------|
-| YouTube | `https://youtu.be/xxx` / `https://www.youtube.com/watch?v=xxx` | 自动字幕 | SenseVoice | yt-dlp |
-| Bilibili | `https://b23.tv/xxx` / `https://www.bilibili.com/video/BVxxx` | - | SenseVoice | API 直接获取 |
-| 小宇宙 | `https://www.xiaoyuzhoufm.com/episode/xxx` | - | SenseVoice | SSR HTML 解析 |
+| 平台 | URL 示例 | 字幕 | ASR | 热门评论 | 视频下载 | 播放列表 |
+|------|----------|------|-----|----------|----------|----------|
+| YouTube | `youtu.be/xxx` / `youtube.com/watch?v=xxx` / `youtube.com/playlist?list=xxx` | 自动字幕 | SenseVoice | yt-dlp | 支持 | 支持 |
+| Bilibili | `b23.tv/xxx` / `bilibili.com/video/BVxxx` | - | SenseVoice | API 直接获取 | 支持 | 支持（合集/多P） |
+| 小宇宙 | `xiaoyuzhoufm.com/episode/xxx` | - | SenseVoice | SSR HTML 解析 | - | - |
 
 ## 项目结构
 
 ```
 src/media_tool/
-  config.py        — 配置加载与校验（统一 LLM 配置 + 旧版兼容）
-  models.py        — 数据模型定义（含 Entity、ENTITY_TYPE_LABELS）
-  utils.py         — 错误类与工具函数
-  llm.py           — 统一 OpenAI 兼容 LLM 客户端（流式）+ 自动重试
-  pipeline.py      — 主编排流程
-  subtitles.py     — yt-dlp 字幕提取与视频元数据获取
-  asr.py           — SenseVoice ASR 转录
-  cleaner.py       — 文本清洗、分段、段落划分
-  summarizer.py    — LLM 结构化总结 + ASR 纠错分段（refine）
-  markdown.py      — Markdown 输出（YAML frontmatter + 结构化内容）
-  feishu.py        — 飞书文档 API + 通知
-  storage.py       — 本地结果持久化
-  comments.py      — 热门评论提取（YouTube / Bilibili / 小宇宙）
+  core/            — 配置、数据模型、错误类与通用工具
   platforms/       — 平台适配器（Bilibili / YouTube / 小宇宙）
+  ingestion/       — 字幕提取、视频元数据、SenseVoice ASR、视频下载
+  text/            — 文本清洗、分段、LLM 总结与 ASR 纠错分段
+  enrichment/      — 热门评论与小宇宙 shownote 提取
+  integrations/    — OpenAI 兼容 LLM 客户端、飞书文档 API 与通知
+  outputs/         — Markdown 输出与本地结果持久化
+  orchestration/   — 主编排流程（转录 + 下载）
+  *.py             — 兼容旧导入路径的薄包装模块
 media_processor.py          — CLI 入口
 media_transcript_skill.py   — OpenClaw Skill 封装
 skills/media-transcript/    — OpenClaw SKILL.md 技能定义

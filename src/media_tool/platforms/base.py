@@ -50,3 +50,17 @@ class PlatformAdapter(ABC):
                 output_template,
             ],
         )
+
+    def normalize_collection_url(self, url: str) -> str:
+        """Normalize URL for collection/playlist download. Strips page/part selectors."""
+        return self.normalize_url(url)
+
+    def build_video_request(self, url: str, output_template: str) -> DownloadRequest:
+        return DownloadRequest(
+            url=self.normalize_url(url),
+            args=[
+                "-f", "bv*+ba/b",
+                "--merge-output-format", "mp4",
+                "-o", output_template,
+            ],
+        )

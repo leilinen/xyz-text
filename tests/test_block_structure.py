@@ -5,13 +5,19 @@ import requests
 import sys
 from pathlib import Path
 
+import pytest
+
 PROJECT_ROOT = Path(__file__).resolve().parent
 SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from media_tool.config import get_settings, require_feishu_credentials
-from media_tool.feishu import get_tenant_access_token, create_document
+from media_tool.core.config import get_settings, require_feishu_credentials
+from media_tool.integrations.feishu import get_tenant_access_token, create_document
+
+settings = get_settings()
+if not settings.feishu_app_id or not settings.feishu_app_secret:
+    pytest.skip("Feishu credentials are required for live API checks", allow_module_level=True)
 
 # 根据 Feishu 官方文档，正确的 block 结构
 def correct_text_block(text: str) -> dict:
@@ -46,7 +52,6 @@ def correct_heading_block(text: str, level: int = 1) -> dict:
     }
 
 # 测试获取 token 和创建文档
-settings = get_settings()
 app_id, app_secret = require_feishu_credentials(settings)
 
 print("测试 1: 获取 tenant_access_token")

@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from src.media_tool.asr import transcribe_audio
-from src.media_tool.config import get_settings
-from src.media_tool.models import TranscriptResult
+from src.media_tool.ingestion.asr import transcribe_audio
+from src.media_tool.core.config import get_settings
+from src.media_tool.core.models import TranscriptResult
 
 
 @pytest.fixture
@@ -33,13 +33,13 @@ def test_get_settings_defaults(config_file: Path) -> None:
 def test_transcribe_audio_calls_sensevoice(monkeypatch: pytest.MonkeyPatch, config_file: Path, audio_file: Path) -> None:
     config_file.write_text("{}", encoding="utf-8")
     test_settings = get_settings(config_file)
-    monkeypatch.setattr("src.media_tool.asr.get_settings", lambda: test_settings)
+    monkeypatch.setattr("src.media_tool.ingestion.asr.get_settings", lambda: test_settings)
 
     fake_result = TranscriptResult(text="hello world", segments=[], audio_path=audio_file)
 
     def fake_sensevoice(path: Path) -> TranscriptResult:
         return fake_result
 
-    monkeypatch.setattr("src.media_tool.asr.transcribe_audio_with_sensevoice", fake_sensevoice)
+    monkeypatch.setattr("src.media_tool.ingestion.asr.transcribe_audio_with_sensevoice", fake_sensevoice)
     result = transcribe_audio(audio_file)
     assert result.text == "hello world"

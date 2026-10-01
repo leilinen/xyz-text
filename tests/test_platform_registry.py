@@ -4,7 +4,7 @@ import pytest
 
 from src.media_tool.platforms.base import PlatformAdapter
 from src.media_tool.platforms.registry import PlatformRegistry, resolve_platform
-from src.media_tool.utils import UnsupportedPlatformError
+from src.media_tool.core.utils import UnsupportedPlatformError
 
 
 class DummyAdapter(PlatformAdapter):

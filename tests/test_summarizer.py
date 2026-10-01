@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from src.media_tool.models import MediaSource
-from src.media_tool.summarizer import summarize_text
-from src.media_tool.utils import SummarizationError
+from src.media_tool.core.models import MediaSource
+from src.media_tool.text.summarizer import summarize_text
+from src.media_tool.core.utils import SummarizationError
 
 
 class FakeClient:

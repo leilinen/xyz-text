@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from src.media_tool.comments import (
+from src.media_tool.enrichment.comments import (
     _fetch_xiaoyuzhou_comments,
     _parse_comment,
     filter_hot_comments,
     fetch_comments,
 )
-from src.media_tool.models import Comment
+from src.media_tool.core.models import Comment
 
 
 def _make_comment(
@@ -144,7 +144,7 @@ _SAMPLE_NEXT_DATA = """
 """
 
 
-@patch("src.media_tool.comments.requests.get")
+@patch("src.media_tool.enrichment.comments.requests.get")
 def test_xiaoyuzhou_parses_comments(mock_get):
     mock_resp = MagicMock()
     mock_resp.text = _SAMPLE_NEXT_DATA
@@ -167,7 +167,7 @@ def test_xiaoyuzhou_parses_comments(mock_get):
     assert result.comments[1].is_pinned is False
 
 
-@patch("src.media_tool.comments.requests.get")
+@patch("src.media_tool.enrichment.comments.requests.get")
 def test_xiaoyuzhou_truncates_to_max(mock_get):
     import json
 
@@ -197,7 +197,7 @@ def test_xiaoyuzhou_truncates_to_max(mock_get):
     assert len(result.comments) == 10
 
 
-@patch("src.media_tool.comments.requests.get")
+@patch("src.media_tool.enrichment.comments.requests.get")
 def test_xiaoyuzhou_no_next_data(mock_get):
     mock_resp = MagicMock()
     mock_resp.text = "<html><body>No data here</body></html>"
@@ -209,7 +209,7 @@ def test_xiaoyuzhou_no_next_data(mock_get):
 
 
 def test_fetch_comments_dispatches_xiaoyuzhou():
-    with patch("src.media_tool.comments._fetch_xiaoyuzhou_comments") as mock:
+    with patch("src.media_tool.enrichment.comments._fetch_xiaoyuzhou_comments") as mock:
         mock.return_value = None
         fetch_comments("https://www.xiaoyuzhoufm.com/episode/abc", platform="xiaoyuzhou")
         mock.assert_called_once()

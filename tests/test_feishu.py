@@ -5,10 +5,10 @@ import os
 import pytest
 from pathlib import Path
 
-from src.media_tool.config import get_settings
-from src.media_tool.feishu import build_doc_url, create_document, get_tenant_access_token, publish_summary, write_document_content
-from src.media_tool.models import ShownoteContent, SummaryResult
-from src.media_tool.utils import FeishuAPIError
+from src.media_tool.core.config import get_settings
+from src.media_tool.integrations.feishu import build_doc_url, create_document, get_tenant_access_token, publish_summary, write_document_content
+from src.media_tool.core.models import ShownoteContent, SummaryResult
+from src.media_tool.core.utils import FeishuAPIError
 
 
 class FakeResponse:
@@ -44,7 +44,7 @@ def test_get_tenant_access_token_success(monkeypatch: pytest.MonkeyPatch, tmp_pa
     config_path = tmp_path / "config.json"
     config_path.write_text('{"feishu_app_id":"app-id","feishu_app_secret":"app-secret"}', encoding="utf-8")
     test_settings = get_settings(config_path)
-    monkeypatch.setattr("src.media_tool.feishu.get_settings", lambda: test_settings)
+    monkeypatch.setattr("src.media_tool.integrations.feishu.get_settings", lambda: test_settings)
 
     session = FakeSession([FakeResponse(200, {"code": 0, "tenant_access_token": "token-1"})])
     assert get_tenant_access_token(session=session) == "token-1"
@@ -104,7 +104,7 @@ def test_publish_summary_success(monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     config_path = tmp_path / "config.json"
     config_path.write_text('{"feishu_app_id":"app-id","feishu_app_secret":"app-secret"}', encoding="utf-8")
     test_settings = get_settings(config_path)
-    monkeypatch.setattr("src.media_tool.feishu.get_settings", lambda: test_settings)
+    monkeypatch.setattr("src.media_tool.integrations.feishu.get_settings", lambda: test_settings)
 
     session = FakeSession(
         [

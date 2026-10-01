@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from src.media_tool.markdown import build_markdown
-from src.media_tool.models import MediaSource, ProcessResult, ShownoteContent, SummaryResult
+from src.media_tool.outputs.markdown import build_markdown
+from src.media_tool.core.models import MediaSource, ProcessResult, ShownoteContent, SummaryResult
 
 
 def test_build_markdown_includes_shownote_text_and_images() -> None:

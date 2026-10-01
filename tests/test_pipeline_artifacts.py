@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from src.media_tool.asr import choose_audio_file
-from src.media_tool.pipeline import process_media
-from src.media_tool.subtitles import choose_subtitle_file
-from src.media_tool.utils import ExternalCommandError
+from src.media_tool.ingestion.asr import choose_audio_file
+from src.media_tool.orchestration.pipeline import process_media
+from src.media_tool.ingestion.subtitles import choose_subtitle_file
+from src.media_tool.core.utils import ExternalCommandError
 
 
 class DummyAdapter:
@@ -52,9 +52,9 @@ def test_process_media_cleans_run_dir_on_failure(monkeypatch: pytest.MonkeyPatch
     def fake_extract_audio_and_transcribe(adapter: object, url: str, work_dir: Path, model=None):
         raise ExternalCommandError("boom")
 
-    monkeypatch.setattr("src.media_tool.pipeline.resolve_platform", fake_resolve_platform)
-    monkeypatch.setattr("src.media_tool.pipeline.extract_subtitles", fake_extract_subtitles)
-    monkeypatch.setattr("src.media_tool.pipeline.extract_audio_and_transcribe", fake_extract_audio_and_transcribe)
+    monkeypatch.setattr("src.media_tool.orchestration.pipeline.resolve_platform", fake_resolve_platform)
+    monkeypatch.setattr("src.media_tool.orchestration.pipeline.extract_subtitles", fake_extract_subtitles)
+    monkeypatch.setattr("src.media_tool.orchestration.pipeline.extract_audio_and_transcribe", fake_extract_audio_and_transcribe)
 
     with pytest.raises(ExternalCommandError):
         process_media("https://example.com/test")
