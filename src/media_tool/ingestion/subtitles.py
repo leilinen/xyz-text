@@ -7,7 +7,7 @@ from pathlib import Path
 
 from ..core.models import SubtitleResult
 from ..core.utils import ExternalCommandError, read_text_file
-from ..core.yt_dlp import build_yt_dlp_auth_args
+from ..core.yt_dlp import build_yt_dlp_common_args
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ def fetch_video_metadata(url: str) -> dict[str, str | None]:
     """Fetch video title and description via yt-dlp --dump-json."""
     try:
         result = subprocess.run(
-            ["yt-dlp", *build_yt_dlp_auth_args(), "--dump-json", "--skip-download", url],
+            ["yt-dlp", *build_yt_dlp_common_args(), "--dump-json", "--skip-download", url],
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode != 0:
@@ -35,7 +35,7 @@ def fetch_video_metadata(url: str) -> dict[str, str | None]:
 
 
 def download_subtitles(request_args: list[str], url: str) -> None:
-    command = ["yt-dlp", *build_yt_dlp_auth_args(), *request_args, url]
+    command = ["yt-dlp", *build_yt_dlp_common_args(), *request_args, url]
     try:
         subprocess.run(command, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as exc:

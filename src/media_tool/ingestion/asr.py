@@ -7,7 +7,7 @@ from pathlib import Path
 from ..core.config import get_settings
 from ..core.models import TranscriptResult
 from ..core.utils import ASRError, ExternalCommandError
-from ..core.yt_dlp import build_yt_dlp_auth_args
+from ..core.yt_dlp import build_yt_dlp_common_args
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ _AUDIO_SUFFIX_PRIORITY = (".mp3", ".m4a", ".wav", ".mp4", ".webm", ".opus", ".og
 
 
 def download_audio(request_args: list[str], url: str) -> None:
-    command = ["yt-dlp", *build_yt_dlp_auth_args(), *request_args, url]
+    command = ["yt-dlp", *build_yt_dlp_common_args(), *request_args, url]
     logger.info("downloading audio: %s", " ".join(command))
     try:
         result = subprocess.run(command, check=True, capture_output=True, text=True)

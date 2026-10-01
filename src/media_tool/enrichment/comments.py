@@ -11,7 +11,7 @@ from typing import Any
 import requests
 
 from ..core.models import Comment, HotCommentsResult
-from ..core.yt_dlp import build_yt_dlp_auth_args
+from ..core.yt_dlp import build_yt_dlp_common_args
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ def _fetch_bilibili_comments(url: str, timeout: int = 30) -> HotCommentsResult |
     try:
         # Get video AID via yt-dlp metadata
         result = subprocess.run(
-            ["yt-dlp", *build_yt_dlp_auth_args(), "--dump-json", "--skip-download", url],
+            ["yt-dlp", *build_yt_dlp_common_args(), "--dump-json", "--skip-download", url],
             capture_output=True, text=True, timeout=timeout,
         )
         if result.returncode != 0:
@@ -131,7 +131,7 @@ def _fetch_youtube_comments(url: str, timeout: int = 120) -> HotCommentsResult |
     """Fetch hot comments from YouTube via yt-dlp."""
     try:
         result = subprocess.run(
-            ["yt-dlp", *build_yt_dlp_auth_args(), "--dump-json", "--write-comments", "--skip-download", url],
+            ["yt-dlp", *build_yt_dlp_common_args(), "--dump-json", "--write-comments", "--skip-download", url],
             capture_output=True, text=True, timeout=timeout,
         )
         if result.returncode != 0:

@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 from ..core.utils import ExternalCommandError
-from ..core.yt_dlp import build_yt_dlp_auth_args
+from ..core.yt_dlp import build_yt_dlp_common_args
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ _VIDEO_EXTENSIONS = {".mp4", ".mkv", ".webm", ".avi", ".mov", ".flv", ".ts"}
 
 def download_video_files(request_args: list[str], url: str) -> None:
     """Execute yt-dlp to download video file(s)."""
-    command = ["yt-dlp", *build_yt_dlp_auth_args(), *request_args, url]
+    command = ["yt-dlp", *build_yt_dlp_common_args(), *request_args, url]
     logger.info("downloading video: %s", " ".join(command))
     try:
         result = subprocess.run(command, check=True, capture_output=True, text=True)
@@ -34,7 +34,7 @@ def detect_playlist(url: str) -> bool:
     """Use yt-dlp to detect if URL points to a playlist (multiple videos)."""
     try:
         result = subprocess.run(
-            ["yt-dlp", *build_yt_dlp_auth_args(), "--flat-playlist", "--dump-json", "--skip-download", url],
+            ["yt-dlp", *build_yt_dlp_common_args(), "--flat-playlist", "--dump-json", "--skip-download", url],
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode != 0:

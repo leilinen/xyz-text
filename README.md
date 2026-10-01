@@ -114,6 +114,8 @@ brew install ffmpeg  # macOS
 - `sensevoice_device` — 推理设备：`mps`（macOS）/ `cuda`（GPU）/ `cpu`
 - `feishu_share_user_id` — 文档发布后自动分享给该用户
 - `refine_max_chars` — ASR 纠错分段的单批次最大字符数（默认 8000）
+- `yt_dlp_cookies_file` — yt-dlp 使用的 Netscape 格式 cookie 文件（项目根目录 `cookies.txt`），提供 YouTube 登录态，优先于浏览器模式
+- `yt_dlp_cookies_from_browser` — 从浏览器读取 cookie（如 `edge:Default`），macOS 首次使用会弹钥匙串授权窗
 
 ### 运行
 
@@ -251,6 +253,30 @@ ASR 文本会自动经过 LLM 纠错分段（refine），修正同音错字和�
 
 **飞书文档写入失败？**
 `feishu.py` 会抛出 `FeishuAPIError`，可使用 `--retry` 从已保存的结果重试上传。
+
+**YouTube 下载报 "Sign in to confirm you're not a bot"？**
+Cookie 登录态缺失或过期。先验证现有 cookie 是否有效：
+
+```bash
+yt-dlp --cookies cookies.txt --skip-download --print title "https://www.youtube.com/watch?v=xxx"
+```
+
+能打印标题说明 cookie 有效，问题在别处；报错则更新 `cookies.txt`（任选其一）：
+
+```bash
+# 方式一：从 Edge 重新导出（前提：Edge 里已登录 YouTube）
+yt-dlp --cookies-from-browser edge:Default --cookies cookies.txt --skip-download --simulate "https://www.youtube.com/watch?v=xxx"
+```
+
+方式二：Edge 安装 "Get cookies.txt LOCALLY" 扩展，登录 YouTube 后导出，覆盖项目根目录的 `cookies.txt`（不依赖钥匙串，最稳）。
+
+注意：`cookies.txt` 等同于 YouTube 登录凭据，已被 `.gitignore` 忽略，切勿提交或分享；Edge 中退出登录会使文件立即失效；会话 cookie 一般可用数月。
+
+**YouTube 下载报 "find-generic-password failed" / "cannot decrypt v10 cookies"？**
+macOS 钥匙串拒绝了 yt-dlp 读取浏览器加密密钥，仅影响 `--cookies-from-browser` 方式。改用 `yt_dlp_cookies_file` 配置即可绕开；若坚持使用浏览器方式，在钥匙串授权弹窗中输入 Mac 密码并点「始终允许」。
+
+**YouTube 下载报 "The page needs to be reloaded"？**
+新版 yt-dlp 需要外部 EJS 脚本求解 YouTube 的 JS 挑战。本项目已对所有 yt-dlp 调用自动附加 `--remote-components ejs:github`（脚本首次使用时从 GitHub 下载并缓存），正常情况下无需手动处理；若仍报错，检查网络能否访问 GitHub 后重试。
 
 ## 作为 OpenClaw Skill 使用
 
